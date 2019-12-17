@@ -102,12 +102,12 @@ class BuilderLogger {
   String _constructMessage(Element element, String message) {
     // <TRANSITIONAL_API>
     ElementDeclarationResult elementDeclaration;
-    if (element.kind != ElementKind.DYNAMIC) {
+    /*if (element.kind != ElementKind.DYNAMIC) {
       var parsedLibrary = ParsedLibraryResultImpl.tmp(element.library);
       if (parsedLibrary.state == ResultState.VALID) {
         elementDeclaration = parsedLibrary.getElementDeclaration(element);
       }
-    }
+    }*/
     // </TRANSITIONAL_API>
     String sourceLocation;
     String source;
