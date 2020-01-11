@@ -184,18 +184,58 @@ class _InjectorBuilder {
       ..fields.addAll(fields.map((b) => b.build()))
       ..constructors.add(constructor.build())
       ..methods.add(_generateInjectorCreatorMethod())
+      ..methods.add(_generateInjectorSyncCreatorMethod())
       ..methods.addAll(creatorMethods.values.map((b) => b.build()))
       ..methods.addAll(injectorProviders.map((b) => b.build())));
   }
 
-  Method _generateInjectorCreatorMethod() {
+  Method _generateInjectorSyncCreatorMethod() {
     final returnType = new TypeReference((b) => b
       ..url = injectorType.url
       ..symbol = injectorType.symbol);
     final injectorCreator = new MethodBuilder()
-      ..name = 'create'
+      ..name = 'createSync'
       ..returns = returnType
       ..static = true;
+    for (final moduleSymbol in graph.includeModules) {
+      if (moduleVariables.containsKey(moduleSymbol)) {
+        final moduleVariable = moduleVariables[moduleSymbol];
+        injectorCreator.requiredParameters.add(new Parameter(
+              (b) => b
+            ..name = moduleVariable.name
+            ..type = moduleVariable.type,
+        ));
+      } else {
+        final moduleType = _reference(moduleSymbol);
+        builderContext.rawLogger.warning(
+          'Unused module in ${summary.clazz.symbol}: ${moduleSymbol.symbol}',
+        );
+        injectorCreator.requiredParameters.add(new Parameter((b) => b
+          ..name = '_' * _unusedCounter++
+          ..type = moduleType));
+      }
+    }
+    final initExpression = concreteInjectorType.newInstanceNamed(
+      '_',
+      moduleVariables.values.map((v) => refer(v.name).expression).toList(),
+    );
+    injectorCreator.body = new Block((b) => b.statements
+      ..add(initExpression.assignFinal('injector').statement)
+      ..add(preInstantiations.build())
+      ..add(refer('injector').returned.statement));
+    return injectorCreator.build();
+  }
+
+  Method _generateInjectorCreatorMethod() {
+    final returnType = new TypeReference((b) => b
+      ..symbol = 'Future'
+      ..url = 'dart:async'
+      ..types.add(injectorType));
+    final injectorCreator = new MethodBuilder()
+      ..name = 'create'
+      ..returns = returnType
+      ..static = true
+      ..modifier = MethodModifier.async;
     for (final moduleSymbol in graph.includeModules) {
       if (moduleVariables.containsKey(moduleSymbol)) {
         final moduleVariable = moduleVariables[moduleSymbol];
