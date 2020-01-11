@@ -190,14 +190,12 @@ class _InjectorBuilder {
 
   Method _generateInjectorCreatorMethod() {
     final returnType = new TypeReference((b) => b
-      ..symbol = 'Future'
-      ..url = 'dart:async'
-      ..types.add(injectorType));
+      ..url = injectorType.url
+      ..symbol = injectorType.symbol);
     final injectorCreator = new MethodBuilder()
       ..name = 'create'
       ..returns = returnType
-      ..static = true
-      ..modifier = MethodModifier.async;
+      ..static = true;
     for (final moduleSymbol in graph.includeModules) {
       if (moduleVariables.containsKey(moduleSymbol)) {
         final moduleVariable = moduleVariables[moduleSymbol];
